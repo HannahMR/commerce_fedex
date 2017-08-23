@@ -6,6 +6,7 @@ use Drupal\address\AddressInterface;
 use Drupal\address\Plugin\Field\FieldType\AddressItem;
 use Drupal\commerce_fedex\Event\CommerceFedExEvents;
 use Drupal\commerce_fedex\Event\RateRequestEvent;
+use Drupal\commerce_fedex\FedExAddressValidation;
 use Drupal\commerce_fedex\FedExRequestInterface;
 use Drupal\commerce_fedex\FedExPluginManager;
 use Drupal\commerce_price\Price;
@@ -193,24 +194,24 @@ class FedEx extends ShippingMethodBase {
   public function defaultConfiguration() {
 
     return [
-      'api_information' => [
-        'api_key' => '',
-        'api_password' => '',
-        'account_number' => '',
-        'meter_number' => '',
-        'mode' => 'test',
-      ],
-      'options' => [
-        'packaging' => static::PACKAGE_ALL_IN_ONE,
-        'rate_request_type' => RateRequestType::VALUE_NONE,
-        'dropoff' => DropoffType::VALUE_REGULAR_PICKUP,
-        'insurance' => FALSE,
-        'rate_multiplier' => 1.0,
-        'round' => PHP_ROUND_HALF_UP,
-        'log' => [],
-      ],
-      'plugins' => [],
-    ] + parent::defaultConfiguration();
+        'api_information' => [
+          'api_key' => '',
+          'api_password' => '',
+          'account_number' => '',
+          'meter_number' => '',
+          'mode' => 'test',
+        ],
+        'options' => [
+          'packaging' => static::PACKAGE_ALL_IN_ONE,
+          'rate_request_type' => RateRequestType::VALUE_NONE,
+          'dropoff' => DropoffType::VALUE_REGULAR_PICKUP,
+          'insurance' => FALSE,
+          'rate_multiplier' => 1.0,
+          'round' => PHP_ROUND_HALF_UP,
+          'log' => [],
+        ],
+        'plugins' => [],
+      ] + parent::defaultConfiguration();
   }
 
   /**
@@ -442,6 +443,13 @@ class FedEx extends ShippingMethodBase {
 
     if ($shipment->getShippingProfile()->address->isEmpty()) {
       return [];
+    }
+
+    // First check if we have a valid address.
+    $valid_address = FedExAddressValidation::validateAddress($shipment, $this->configuration);
+    // If the address is invalid validateAddress will return "UNKNOWN".
+    If ($valid_address === "UNKNOWN"){
+      return FALSE;
     }
 
     $rate_service = $this->fedExRequest->getRateService($this->configuration);
