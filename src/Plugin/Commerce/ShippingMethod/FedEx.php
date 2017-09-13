@@ -42,6 +42,7 @@ use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use NicholasCreativeMedia\FedExPHP\Structs\AddressToValidate;
 
 /**
  * Provides the FedEx shipping method.
@@ -193,24 +194,24 @@ class FedEx extends ShippingMethodBase {
   public function defaultConfiguration() {
 
     return [
-      'api_information' => [
-        'api_key' => '',
-        'api_password' => '',
-        'account_number' => '',
-        'meter_number' => '',
-        'mode' => 'test',
-      ],
-      'options' => [
-        'packaging' => static::PACKAGE_ALL_IN_ONE,
-        'rate_request_type' => RateRequestType::VALUE_NONE,
-        'dropoff' => DropoffType::VALUE_REGULAR_PICKUP,
-        'insurance' => FALSE,
-        'rate_multiplier' => 1.0,
-        'round' => PHP_ROUND_HALF_UP,
-        'log' => [],
-      ],
-      'plugins' => [],
-    ] + parent::defaultConfiguration();
+        'api_information' => [
+          'api_key' => '',
+          'api_password' => '',
+          'account_number' => '',
+          'meter_number' => '',
+          'mode' => 'test',
+        ],
+        'options' => [
+          'packaging' => static::PACKAGE_ALL_IN_ONE,
+          'rate_request_type' => RateRequestType::VALUE_NONE,
+          'dropoff' => DropoffType::VALUE_REGULAR_PICKUP,
+          'insurance' => FALSE,
+          'rate_multiplier' => 1.0,
+          'round' => PHP_ROUND_HALF_UP,
+          'log' => [],
+        ],
+        'plugins' => [],
+      ] + parent::defaultConfiguration();
   }
 
   /**
@@ -433,6 +434,29 @@ class FedEx extends ShippingMethodBase {
         '@rate_request' => var_export($data, TRUE),
       ]);
     }
+  }
+
+  public function validateAddress($address_object){
+
+    $address_validation_service = $this->fedExRequest->getAddressValidationService();
+
+    $addressParty = $this->getAddressForFedEx($address_object);
+    $address = $addressParty->getAddress();
+
+    $address_to_validate = new AddressToValidate(
+      $clientReferenceId = null,
+      $contact = null,
+      $address
+    );
+
+    $address_validation_request = $this->fedExRequest->getAddressValidationRequest($this->configuration);
+    $address_validation_request->setAddressesToValidate([$address_to_validate]);
+
+    $valid_address = $address_validation_service->addressValidation($address_validation_request);
+    $result = $valid_address ? $valid_address->getAddressResults()[0]->Classification : '';
+
+    return $result;
+
   }
 
   /**

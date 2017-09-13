@@ -100,4 +100,26 @@ interface FedExRequestInterface {
    */
   public function getVersion($service);
 
+  /**
+   * @return \NicholasCreativeMedia\FedExPHP\Structs\VersionId.
+   */
+  public function getVersionId();
+
+
+  /**
+   * @return \NicholasCreativeMedia\FedExPHP\Services\AddressValidationService.
+   */
+  public function getAddressValidationService();
+
+  /**
+   *
+   * @param \@param array $configuration
+   *   The plugin configuration.
+   * @param \NicholasCreativeMedia\FedExPHP\Structs\VersionId
+   *    $version_id.
+   *
+   * @return \NicholasCreativeMedia\FedExPHP\Structs\AddressValidationRequest.
+   */
+  public function getAddressValidationRequest($configuration);
+
 }

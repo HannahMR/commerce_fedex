@@ -11,6 +11,9 @@ use NicholasCreativeMedia\FedExPHP\Structs\RateRequest;
 use NicholasCreativeMedia\FedExPHP\Structs\TrackRequest;
 use NicholasCreativeMedia\FedExPHP\Structs\WebAuthenticationCredential;
 use NicholasCreativeMedia\FedExPHP\Structs\WebAuthenticationDetail;
+use NicholasCreativeMedia\FedExPHP\Services\AddressValidationService;
+use NicholasCreativeMedia\FedExPHP\Structs\AddressValidationRequest;
+use NicholasCreativeMedia\FedExPHP\Structs\VersionId;
 
 /**
  * Manage FedEx API services.
@@ -142,6 +145,20 @@ class FedExRequest implements FedExRequestInterface {
   /**
    * {@inheritdoc}
    */
+  public function getVersionId(){
+    $version_id = new VersionId(
+      $serviceId = $this->getAddressValidationService()->version->ServiceId,
+      $major = $this->getAddressValidationService()->version->Major,
+      $intermediate = $this->getAddressValidationService()->version->Intermediate,
+      $minor = $this->getAddressValidationService()->version->Minor
+    );
+
+    return $version_id;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function getClientDetail(array $configuration) {
     $client_detail = new ClientDetail(
       $configuration['api_information']['account_number'],
@@ -183,6 +200,27 @@ class FedExRequest implements FedExRequestInterface {
     }
 
     return $mode;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getAddressValidationService() {
+    return new AddressValidationService();
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getAddressValidationRequest($configuration) {
+
+    $address_request = new AddressValidationRequest(
+      $this->getWebAuthenticationDetail($configuration),
+      $this->getClientDetail($configuration),
+      $this->getVersionId()
+    );
+
+    return $address_request;
   }
 
 }
